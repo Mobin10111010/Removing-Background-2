@@ -1,0 +1,259 @@
+
+<!DOCTYPE html><html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Remove Background</title>
+  <style>
+    /* طراحی کلی */
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #4682B4; /* پس‌زمینه آبی تیره */
+      color: #fff;
+      text-align: center;
+      padding: 30px;
+      margin: 0;
+      height: auto;
+      overflow: auto;
+      position: relative;
+      animation: lightFadeIn 5s ease-in-out infinite alternate; /* انیمیشن خاموش شدن نور */
+    }/* انیمیشن خاموش شدن نور به آبی روشن */
+@keyframes lightFadeIn {
+  0% {
+    background-color: #4682B4; /* آبی تیره */
+  }
+  100% {
+    background-color: #ADD8E6; /* آبی روشن */
+  }
+}
+
+/* تکسچر نقطه‌ای با انیمیشن */
+.dots {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('https://www.transparenttextures.com/patterns/dots.png'); /* نقطه‌های کوچک */
+  opacity: 0.1; /* شدت نقاط */
+  animation: moveDots 15s linear infinite; /* انیمیشن حرکت نقاط */
+  z-index: -1; /* قرار دادن تکسچر در پشت محتوا */
+}
+
+@keyframes moveDots {
+  0% { background-position: 0 0; }
+  100% { background-position: 100% 100%; }
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+}
+
+p {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+}
+
+/* کارت اصلی */
+.card {
+  background: rgba(255, 255, 255, 0.9);
+  color: #333;
+  border-radius: 10px;
+  padding: 30px;
+  max-width: 600px;
+  margin: 0 auto;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* ورودی فایل */
+input[type="file"] {
+  display: none;
+}
+
+/* دکمه‌ها */
+img {
+  cursor: pointer;
+  max-width: 300px;
+  margin-top: 30px;
+  transition: all 0.3s ease;
+}
+
+img:hover {
+  transform: scale(1.05);
+}
+
+/* لودینگ */
+.spinner {
+  border: 5px solid rgba(0, 0, 0, 0.3);
+  border-top: 5px solid #000000;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+  display: none;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* درصد پردازش */
+#progressText {
+  font-size: 1.2rem;
+  color: #000;
+  display: none;
+}
+
+/* نمایش نام فایل انتخاب شده */
+#fileName {
+  font-size: 1.2rem;
+  color: #000;
+  margin-top: 15px;
+}
+
+/* دکمه بارگیری تصویر */
+#downloadButtonImage {
+  cursor: pointer;
+  max-width: 300px;
+  margin-top: 30px;
+  display: none;
+}
+
+  </style>
+</head>
+<body>
+  <div class="dots"></div> <!-- افزودن لایه تکسچر نقاط -->
+  <h1>حذف بک‌گراند تصویر</h1>
+  <p>تصویر خود را آپلود کنید تا پس‌زمینه آن حذف شود!</p>  <div class="card">
+    <!-- دکمه انتخاب فایل با تصویر -->
+    <img id="uploadFileImage" src="https://i.postimg.cc/wjzW3pVZ/Picsart-25-02-05-19-06-29-223.png" alt="Upload Image">
+    <input type="file" id="uploadImage" accept="image/*">
+    <p id="fileName">نام فایل انتخاب‌شده: هیچ فایلی انتخاب نشده است</p><!-- دکمه حذف بک‌گراند با تصویر -->
+<img id="removeBgImage" src="https://i.postimg.cc/c4msBK33/Picsart-25-02-05-18-55-53-762.png" alt="Remove Background">
+
+<div class="spinner" id="loadingSpinner"></div>
+<p id="progressText">در حال پردازش: 0%</p>
+
+<div id="result">
+  <p>تصویر پردازش‌شده:</p>
+  <img id="outputImage" src="" alt="Processed Image">
+</div>
+
+<!-- دکمه بارگیری تصویر -->
+<img id="downloadButtonImage" src="https://i.postimg.cc/Vk5JqSDC/Picsart-25-02-05-19-15-43-040.png" alt="Download Image">
+
+  </div>  <script>
+    // لیست کلیدهای API
+    const apiKeys = [
+      "ZpGqSM4wzCqLfWyr87BRWaqC",
+      "amidBNfzA8DmA9joZUeC4sUF",
+      "RqymYPKm3ST52JmWMtLDVxSt",
+      "hPqLYkKxVjoPPJD1uH4Rsmk7"
+    ];
+
+    let currentApiKeyIndex = 0;
+
+    // تابع برای حذف پس‌زمینه تصویر
+    async function removeBackground(file) {
+      const apiKey = apiKeys[currentApiKeyIndex]; // استفاده از API key فعلی
+      const formData = new FormData();
+      formData.append('image_file', file);
+      formData.append('size', 'auto');
+      formData.append('format', 'png');
+
+      try {
+        const response = await fetch('https://api.remove.bg/v1.0/removebg', {
+          method: 'POST',
+          headers: { 'X-Api-Key': apiKey },
+          body: formData
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Error with current API key:", errorText);
+
+          // اگر درخواست با مشکل مواجه شد (مثل تمام شدن اعتبار IP یا API key)، کلید بعدی را امتحان می‌کنیم
+          if (errorText.includes('limit exceeded') || errorText.includes('API limit reached')) {
+            console.log("API limit reached, switching to next key...");
+            currentApiKeyIndex = (currentApiKeyIndex + 1) % apiKeys.length; // به کلید بعدی برو
+            return removeBackground(file); // درخواست دوباره با کلید جدید
+          }
+          throw new Error(errorText);
+        }
+
+        const blob = await response.blob();
+        const imageUrl = URL.createObjectURL(blob);
+        return imageUrl;
+
+      } catch (error) {
+        console.error("Error occurred:", error);
+        alert("خطایی رخ داد: " + error.message);
+        throw error;
+      }
+    }
+
+    document.getElementById('uploadFileImage').addEventListener('click', () => {
+      document.getElementById('uploadImage').click();
+    });
+
+    document.getElementById('uploadImage').addEventListener('change', (event) => {
+      const fileName = event.target.files.length ? event.target.files[0].name : 'هیچ فایلی انتخاب نشده است';
+      document.getElementById('fileName').textContent = `نام فایل انتخاب‌شده: ${fileName}`;
+    });
+
+    document.getElementById('removeBgImage').addEventListener('click', async () => {
+      const fileInput = document.getElementById('uploadImage');
+      const outputImage = document.getElementById('outputImage');
+      const loadingSpinner = document.getElementById('loadingSpinner');
+      const downloadButtonImage = document.getElementById('downloadButtonImage');
+      const progressText = document.getElementById('progressText');
+
+      if (!fileInput.files.length) {
+        alert("لطفاً یک تصویر انتخاب کنید.");
+        return;
+      }
+
+      const file = fileInput.files[0];
+
+      loadingSpinner.style.display = "block";
+      progressText.style.display = "block";
+      progressText.textContent = "در حال پردازش: 0%";
+      outputImage.src = "";
+
+      let progress = 0;
+      const progressInterval = setInterval(() => {
+        if (progress < 90) {
+          progress += 10;
+          progressText.textContent = `در حال پردازش: ${progress}%`;
+        }
+      }, 500);
+
+      try {
+        const imageUrl = await removeBackground(file);
+
+        clearInterval(progressInterval);
+        progressText.textContent = "در حال پردازش: 100%";
+        outputImage.src = imageUrl;
+
+        downloadButtonImage.style.display = "inline-block";
+        downloadButtonImage.onclick = () => {
+          const a = document.createElement('a');
+          a.href = imageUrl;
+          a.download = "high_quality_image.png"; // ذخیره با کیفیت بالا
+          a.click();
+        };
+
+        alert("بک‌گراند تصویر با کیفیت بالا حذف شد!");
+      } catch (error) {
+        console.error(error);
+        alert("خطایی رخ داد: " + error.message);
+      } finally {
+        loadingSpinner.style.display = "none";
+        progressText.style.display = "none";
+      }
+    });
+  </script></body>
+</html> 
